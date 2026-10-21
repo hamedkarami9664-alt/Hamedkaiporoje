@@ -1,12 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elden Ring Guide</title>
-</head>
-<body>
-    <h1>Elden Ring Guide</h1>
-    <p>Welcome to the Elden Ring Guide.</p>
-</body>
-</html>
+
+package com.eldenring.fa
+
+import android.app.Activity
+import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
+
+class MainActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        try {
+            val webView = WebView(this)
+            webView.webViewClient = WebViewClient()
+            webView.settings.javaScriptEnabled = true
+            webView.loadUrl("file:///android_asset/index.html")
+            setContentView(webView)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
