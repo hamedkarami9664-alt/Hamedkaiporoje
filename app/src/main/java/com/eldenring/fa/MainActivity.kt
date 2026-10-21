@@ -1,26 +1,19 @@
+
 package com.eldenring.fa
 
 import android.app.Activity
 import android.os.Bundle
-import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.TextView
 
 class MainActivity : Activity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        try {
-            val webView = WebView(this)
-            webView.webViewClient = WebViewClient()
-            webView.settings.javaScriptEnabled = true
-            webView.loadUrl("file:///android_asset/index.html")
-            setContentView(webView)
-        } catch (e: Exception) {
-            val errorView = TextView(this)
-            errorView.text = "Error: ${e.message}"
-            setContentView(errorView)
-        }
+        val textView = TextView(this)
+        textView.text = "Elden Ring Guide\n\nApp is working!"
+        textView.textSize = 24f
+        textView.setPadding(32, 64, 32, 32)
+
+        setContentView(textView)
     }
 }
