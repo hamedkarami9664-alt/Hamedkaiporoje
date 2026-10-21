@@ -1,10 +1,9 @@
-name: Build Elden Ring Guide APK
+name: Build Elden Ring Guide
 
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
 
 permissions:
   contents: read
@@ -14,16 +13,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Create Android project
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Create Android App
+        shell: bash
         run: |
           mkdir -p app/src/main/java/com/eldenring/fa
           mkdir -p app/src/main/assets
@@ -54,6 +56,11 @@ jobs:
           }
           EOF
 
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+
           cat > app/build.gradle.kts <<'EOF'
           plugins {
               id("com.android.application")
@@ -76,8 +83,9 @@ jobs:
           cat > app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <application
-                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="Elden Ring Guide">
+                  android:label="Elden Ring Guide"
+                  android:theme="@android:style/Theme.Material.NoActionBar"
+                  android:usesCleartextTraffic="false">
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
@@ -96,23 +104,138 @@ jobs:
           import android.app.Activity
           import android.os.Bundle
           import android.graphics.Color
+          import android.graphics.Typeface
           import android.view.Gravity
+          import android.view.ViewGroup
+          import android.widget.Button
+          import android.widget.LinearLayout
+          import android.widget.ScrollView
           import android.widget.TextView
 
           class MainActivity : Activity() {
+
+              private val gold = Color.rgb(218, 184, 105)
+              private val background = Color.rgb(22, 22, 22)
+              private lateinit var content: LinearLayout
+
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
+                  window.statusBarColor = background
+                  window.navigationBarColor = background
+                  showHome()
+              }
 
-                  val view = TextView(this)
-                  view.text = "Elden Ring Guide\n\nApp is working!"
-                  view.textSize = 24f
-                  view.setTextColor(Color.WHITE)
-                  view.gravity = Gravity.CENTER
-                  view.setBackgroundColor(Color.rgb(23, 23, 23))
+              private fun text(value: String, size: Float): TextView {
+                  return TextView(this).apply {
+                      text = value
+                      textSize = size
+                      setTextColor(Color.WHITE)
+                      setPadding(20, 16, 20, 16)
+                  }
+              }
 
-                  setContentView(view)
+              private fun button(label: String, action: () -> Unit): Button {
+                  return Button(this).apply {
+                      text = label
+                      setTextColor(gold)
+                      setOnClickListener { action() }
+                  }
+              }
+
+              private fun page(title: String) {
+                  val scroll = ScrollView(this)
+                  content = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setPadding(12, 12, 12, 24)
+                      setBackgroundColor(background)
+                  }
+                  scroll.addView(content)
+                  setContentView(scroll)
+
+                  content.addView(text(title, 26f).apply {
+                      setTextColor(gold)
+                      typeface = Typeface.DEFAULT_BOLD
+                      gravity = Gravity.CENTER
+                  })
+              }
+
+              private fun showHome() {
+                  page("ELDEN RING GUIDE")
+                  content.addView(text(
+                      "A beginner's guide to the Lands Between.",
+                      17f
+                  ))
+                  content.addView(button("Beginner Tips") {
+                      showSection("Beginner Tips", """
+                          1. Explore Limgrave before fighting major bosses.
+                          2. Activate Sites of Grace to rest and level up.
+                          3. Collect Golden Seeds to increase flask uses.
+                          4. Find Sacred Tears to improve flask healing.
+                          5. Upgrade your weapon with Smithing Stones.
+                          6. Use Spirit Ashes when a fight is difficult.
+                          7. Learn enemy attack patterns and dodge timing.
+                          8. Vigor increases maximum HP and helps survival.
+                      """.trimIndent())
+                  })
+                  content.addView(button("Stats and Attributes") {
+                      showSection("Stats and Attributes", """
+                          Vigor: increases maximum HP.
+                          Mind: increases FP for skills and spells.
+                          Endurance: increases stamina and equip load.
+                          Strength: supports strength-scaling weapons.
+                          Dexterity: supports dexterity-scaling weapons.
+                          Intelligence: supports many sorceries.
+                          Faith: supports many incantations.
+                          Arcane: affects discovery and certain abilities.
+
+                          Check weapon scaling before investing levels.
+                      """.trimIndent())
+                  })
+                  content.addView(button("Combat Basics") {
+                      showSection("Combat Basics", """
+                          Lock on to keep enemies in view.
+                          Dodge through attacks when timing allows.
+                          Do not let stamina run out completely.
+                          Use guard counters after blocking an attack.
+                          Heavy attacks can break enemy stance.
+                          Change equipment to suit each encounter.
+                      """.trimIndent())
+                  })
+                  content.addView(button("Exploration") {
+                      showSection("Exploration", """
+                          Explore caves, tunnels, ruins and side paths.
+                          Map fragments reveal more of each region.
+                          Churches may contain Sacred Tears.
+                          Golden trees may contain Golden Seeds.
+                          Talk to characters more than once.
+                          Rest at a Site of Grace to refresh the world.
+                      """.trimIndent())
+                  })
+                  content.addView(button("Boss Preparation") {
+                      showSection("Boss Preparation", """
+                          Upgrade your weapon before raising its stats.
+                          Bring enough healing flasks.
+                          Observe the boss before attacking repeatedly.
+                          Summons can help if the encounter allows them.
+                          If blocked, explore elsewhere and return stronger.
+                      """.trimIndent())
+                  })
+              }
+
+              private fun showSection(title: String, body: String) {
+                  page(title)
+                  content.addView(text(body, 17f))
+                  content.addView(button("Back to Home") { showHome() })
               }
           }
+          EOF
+
+          cat > app/src/main/assets/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head><meta charset="UTF-8"><title>Elden Ring Guide</title></head>
+          <body><h1>Elden Ring Guide</h1></body>
+          </html>
           EOF
 
           cat > app/src/main/res/values/strings.xml <<'EOF'
@@ -121,16 +244,6 @@ jobs:
           </resources>
           EOF
 
-          cat > gradle.properties <<'EOF'
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          android.useAndroidX=true
-          EOF
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
-
       - name: Build APK
         run: gradle assembleDebug --stacktrace
 
@@ -138,9 +251,9 @@ jobs:
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
           ls -lh app/build/outputs/apk/debug/app-debug.apk
+          unzip -t app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: Elden-Ring-Guide-APK
           path: app/build/outputs/apk/debug/app-debug.apk
